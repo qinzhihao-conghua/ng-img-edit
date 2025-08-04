@@ -23,7 +23,6 @@ export class ImageEditorComponent implements AfterViewInit {
   cropRect: fabric.Rect | null = null;
   brushSize: number = 10;
   mosaicSize: number = 10;
-  mosaicColor: string = '#000000';
   mosaicStyle: string = 'circle';
   textContent: string = '添加文本';
   textColor: string = '#000000';
@@ -525,11 +524,11 @@ export class ImageEditorComponent implements AfterViewInit {
 
     // 根据选择的风格应用马赛克效果
     if (this.mosaicStyle === 'circle') {
-      // 创建圆形马赛克效果
+      // 创建圆形马赛克效果，使用平均颜色填充
       ctx.beginPath();
       ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
       ctx.closePath();
-      ctx.fillStyle = this.mosaicColor;
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a/255})`;
       ctx.fill();
     } else {
       // 默认方形马赛克效果
@@ -729,10 +728,7 @@ export class ImageEditorComponent implements AfterViewInit {
     this.mosaicSize = size;
   }
 
-  // 设置马赛克颜色
-  setMosaicColor(color: string) {
-    this.mosaicColor = color;
-  }
+
 
   // 设置马赛克风格
   setMosaicStyle(style: string) {

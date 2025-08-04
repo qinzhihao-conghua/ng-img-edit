@@ -39,10 +39,7 @@
             <input type="range" min="5" max="50" [(ngModel)]="mosaicSize" (input)="setMosaicSize(mosaicSize)">
         </div>
 
-        <div *ngIf="isMosaicMode" class="size-control">
-            <label>马赛克颜色:</label>
-            <input type="color" [(ngModel)]="mosaicColor" (input)="setMosaicColor(mosaicColor)">
-        </div>
+
 
         <div *ngIf="isMosaicMode" class="size-control">
             <label>马赛克风格:</label>
