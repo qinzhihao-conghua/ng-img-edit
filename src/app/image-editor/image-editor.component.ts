@@ -428,9 +428,9 @@ export class ImageEditorComponent implements AfterViewInit {
     // 只有在马赛克模式激活时才应用效果
     if (!this.isMosaicMode || !this.isMosaicActive || !this.imageObject) return;
 
-    // 限制马赛克应用频率以提高性能
+    // 限制马赛克应用频率以提高性能，但不要太严格
     const now = Date.now();
-    if (now - this.lastMosaicTime < 50) return; // 降低频率限制以获得更流畅的体验
+    if (now - this.lastMosaicTime < 20) return; // 更宽松的频率限制
     this.lastMosaicTime = now;
 
     const pointer = this.canvas.getPointer(event.e);
@@ -440,19 +440,6 @@ export class ImageEditorComponent implements AfterViewInit {
     // 计算相对于图片的位置
     const imgX = (pointer.x - (img.left || 0)) / scale;
     const imgY = (pointer.y - (img.top || 0)) / scale;
-
-    // 检查是否与上一个点太接近，避免重复处理
-    if (this.lastMosaicPoint.x !== -1 && this.lastMosaicPoint.y !== -1) {
-      const distance = Math.sqrt(
-        Math.pow(imgX - this.lastMosaicPoint.x, 2) +
-        Math.pow(imgY - this.lastMosaicPoint.y, 2)
-      );
-      // 如果距离太近则跳过
-      if (distance < this.mosaicSize / 4) return;
-    }
-
-    // 更新上一个点的位置
-    this.lastMosaicPoint = { x: imgX, y: imgY };
 
     // 获取图片元素
     const imgElement = img.getElement();
@@ -476,6 +463,48 @@ export class ImageEditorComponent implements AfterViewInit {
     // 检查边界
     if (x < 0 || y < 0 || x + size > canvas.width || y + size > canvas.height) return;
 
+    // 如果有上一个点，则在两点之间创建连续的马赛克路径
+    if (this.lastMosaicPoint.x !== -1 && this.lastMosaicPoint.y !== -1) {
+      const prevX = Math.floor(this.lastMosaicPoint.x - size / 2);
+      const prevY = Math.floor(this.lastMosaicPoint.y - size / 2);
+      
+      // 计算两点之间的距离和方向
+      const dx = x - prevX;
+      const dy = y - prevY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // 如果距离较大，则在两点之间创建插值点
+      if (distance > size / 2) {
+        const steps = Math.ceil(distance / (size / 2));
+        for (let i = 0; i <= steps; i++) {
+          const interpX = Math.floor(prevX + (dx * i) / steps);
+          const interpY = Math.floor(prevY + (dy * i) / steps);
+          
+          // 检查边界
+          if (interpX >= 0 && interpY >= 0 && interpX + size <= canvas.width && interpY + size <= canvas.height) {
+            this.applyMosaicAtPoint(ctx, interpX, interpY, size);
+          }
+        }
+      } else {
+        // 距离较近，直接应用当前点
+        this.applyMosaicAtPoint(ctx, x, y, size);
+      }
+    } else {
+      // 没有上一个点，直接应用当前点
+      this.applyMosaicAtPoint(ctx, x, y, size);
+    }
+
+    // 更新上一个点的位置
+    this.lastMosaicPoint = { x: imgX, y: imgY };
+
+    // 更新图片源
+    (img as any).setElement(canvas);
+    this.canvas.renderAll();
+    // 注意：在鼠标移动过程中不保存状态，只在停止操作时保存
+  }
+
+  // 在指定位置应用马赛克效果
+  private applyMosaicAtPoint(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
     // 获取区域像素数据
     const imageData = ctx.getImageData(x, y, size, size);
     const data = imageData.data;
@@ -514,11 +543,6 @@ export class ImageEditorComponent implements AfterViewInit {
       // 将修改后的像素数据放回
       ctx.putImageData(imageData, x, y);
     }
-
-    // 更新图片源
-    (img as any).setElement(canvas);
-    this.canvas.renderAll();
-    // 注意：在鼠标移动过程中不保存状态，只在停止操作时保存
   }
 
   addText() {
