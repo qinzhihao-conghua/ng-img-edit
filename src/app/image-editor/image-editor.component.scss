@@ -1,0 +1,73 @@
+/* image-editor.component.css */
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.toolbar {
+    background-color: #2c3e50;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.toolbar button {
+    padding: 8px 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.toolbar button:hover {
+    background-color: #2980b9;
+}
+
+.toolbar button.active {
+    background-color: #e74c3c;
+}
+
+.file-input {
+    display: none;
+}
+
+.text-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.size-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: white;
+}
+
+.size-control label {
+    white-space: nowrap;
+}
+
+.size-control input {
+    width: 100px;
+}
+
+.canvas-container {
+    flex: 1;
+    overflow: auto;
+    background-color: #ecf0f1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#editor-canvas {
+    border: 1px solid #bdc3c7;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}

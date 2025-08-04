@@ -1,0 +1,64 @@
+<!-- image-editor.component.html -->
+<div class="editor-container">
+    <div class="toolbar">
+        <input type="file" (change)="loadImage($event)" accept="image/*" class="file-input" #fileInput>
+
+        <button (click)="fileInput.click()">导入图片</button>
+
+        <button (click)="toggleDrawingMode()" [class.active]="isDrawingMode">
+            {{ isDrawingMode ? '退出绘制' : '自由绘制' }}
+        </button>
+
+        <button (click)="toggleCropMode()" [class.active]="isCropMode">
+            {{ isCropMode ? '退出裁剪' : '裁剪' }}
+        </button>
+        <button *ngIf="isCropMode" (click)="applyCrop()">应用裁剪</button>
+
+        <button (click)="toggleMosaicMode()" [class.active]="isMosaicMode">
+            {{ isMosaicMode ? '退出马赛克' : '马赛克' }}
+        </button>
+
+        <div class="text-controls">
+            <input type="text" [(ngModel)]="textContent" placeholder="输入文本">
+            <input type="color" [(ngModel)]="textColor">
+            <button (click)="addText()">添加文本</button>
+        </div>
+
+        <button (click)="undo()">撤销</button>
+        <button (click)="redo()">重做</button>
+        <button (click)="reset()">重置</button>
+        <button (click)="exportAsPNG()">导出PNG</button>
+
+        <div *ngIf="isDrawingMode" class="size-control">
+            <label>画笔大小: {{brushSize}}px</label>
+            <input type="range" min="1" max="50" [(ngModel)]="brushSize" (input)="setBrushSize(brushSize)">
+        </div>
+
+        <div *ngIf="isMosaicMode" class="size-control">
+            <label>马赛克大小: {{mosaicSize}}px</label>
+            <input type="range" min="5" max="50" [(ngModel)]="mosaicSize" (input)="setMosaicSize(mosaicSize)">
+        </div>
+
+        <div *ngIf="isMosaicMode" class="size-control">
+            <label>马赛克颜色:</label>
+            <input type="color" [(ngModel)]="mosaicColor" (input)="setMosaicColor(mosaicColor)">
+        </div>
+
+        <div *ngIf="isMosaicMode" class="size-control">
+            <label>马赛克风格:</label>
+            <select [(ngModel)]="mosaicStyle" (change)="setMosaicStyle(mosaicStyle)">
+                <option value="square">方形</option>
+                <option value="circle">圆形</option>
+            </select>
+        </div>
+
+        <div class="size-control">
+            <label>文本大小: {{textSize}}px</label>
+            <input type="range" min="10" max="72" [(ngModel)]="textSize" (input)="setTextSize(textSize)">
+        </div>
+    </div>
+
+    <div #canvasContainer class="canvas-container">
+        <canvas #canvasElement id="editor-canvas"></canvas>
+    </div>
+</div>
