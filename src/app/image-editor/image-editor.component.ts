@@ -121,8 +121,29 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.freeDrawingBrush.color = '#ff3300';
       
       // 监听自由绘制路径创建完成事件
-      this.canvas.on('path:created', () => {
-        console.log('Path created, saving state');
+      this.canvas.on('path:created', (options: any) => {
+        console.log('Path created, options:', options);
+        // 获取创建的路径对象
+        const path = options.path || options.target;
+        console.log('Path object:', path);
+        if (path) {
+          // 设置路径对象的属性，防止被选择和控制
+          path.set({
+            selectable: false,  // 禁用选择功能
+            evented: false,     // 禁用事件处理
+            hasControls: false, // 隐藏控制点
+            hasBorders: false,  // 隐藏边框
+            lockMovementX: true, // 锁定X轴移动
+            lockMovementY: true, // 锁定Y轴移动
+            lockRotation: true,  // 锁定旋转
+            lockScalingX: true,  // 锁定X轴缩放
+            lockScalingY: true   // 锁定Y轴缩放
+          });
+          // 重新渲染画布以应用更改
+          this.canvas.requestRenderAll();
+        } else {
+          console.log('Path object not found in options');
+        }
         this.saveState();
       });
     } else {
