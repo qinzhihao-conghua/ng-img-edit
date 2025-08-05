@@ -40,6 +40,31 @@
 .text-controls {
     display: flex;
     gap: 5px;
+    align-items: center;
+}
+
+.color-buttons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.color-button {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.color-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.color-button:active {
+    transform: scale(0.95);
 }
 
 .size-control {
@@ -55,6 +80,10 @@
 
 .size-control input {
     width: 100px;
+}
+
+.size-control input[type="range"] {
+    width: 80px;
 }
 
 .canvas-container {

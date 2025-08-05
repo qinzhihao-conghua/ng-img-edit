@@ -27,6 +27,9 @@ export class ImageEditorComponent implements AfterViewInit {
   textContent: string = '添加文本';
   textColor: string = '#000000';
   textSize: number = 24;
+  showTextControls: boolean = false;
+  selectedTextObject: fabric.IText | null = null;
+  handleCanvasTextAddBound: ((options: any) => void) | null = null;
 
   ngAfterViewInit() {
     this.initializeCanvas();
@@ -601,6 +604,27 @@ export class ImageEditorComponent implements AfterViewInit {
     }
   }
 
+  toggleTextControls() {
+    this.showTextControls = !this.showTextControls;
+    
+    // 移除之前的画布点击事件监听器
+    if (this.handleCanvasTextAddBound) {
+      this.canvas.off('mouse:down', this.handleCanvasTextAddBound);
+      this.handleCanvasTextAddBound = null;
+    }
+    
+    // 如果是打开文本控制面板，则添加画布点击事件监听器
+    if (this.showTextControls) {
+      // 添加画布点击事件监听器来添加文本
+      this.handleCanvasTextAddBound = this.handleCanvasTextAdd.bind(this);
+      this.canvas.on('mouse:down', this.handleCanvasTextAddBound);
+    }
+  }
+
+  selectTextColor(color: string) {
+    this.textColor = color;
+  }
+
   addText() {
     // 使用默认文本
     const textContent = '添加文本';
@@ -655,6 +679,86 @@ export class ImageEditorComponent implements AfterViewInit {
     }, 100);
     
     this.saveState();
+  }
+
+  handleCanvasTextAdd(options: any) {
+    // 检查是否点击在已存在的文本对象上
+    const clickedObject = options.target;
+    
+    // 如果点击的是文本对象，则不添加新文本
+    if (clickedObject && clickedObject.type === 'i-text') {
+      // 如果是双击，则进入编辑模式
+      if (options.e.detail === 2) {
+        this.canvas.setActiveObject(clickedObject);
+        clickedObject.enterEditing();
+        clickedObject.selectAll();
+        this.canvas.requestRenderAll();
+      }
+      // 无论单击还是双击文本对象，都应该返回，不创建新文本
+      return;
+    }
+    
+    // 获取点击位置
+    const pointer = this.canvas.getPointer(options.e);
+    
+    // 使用默认文本
+    const textContent = '添加文本';
+    
+    const text = new fabric.IText(textContent, {
+      left: pointer.x,
+      top: pointer.y,
+      fontFamily: 'Arial',
+      fontSize: this.textSize,
+      fill: this.textColor,
+      selectable: true
+    });
+
+    // 添加双击编辑功能
+    text.on('mousedown', (options: any) => {
+      if (options.e.detail === 2) { // 检查是否为双击
+        this.canvas.setActiveObject(text); // 激活文本对象
+        text.enterEditing(); // 进入编辑模式
+        text.selectAll(); // 选中所有文本
+        this.canvas.requestRenderAll(); // 重新渲染画布
+      }
+    });
+
+    // 添加失去焦点时退出编辑模式的功能
+    text.on('editing:exited', () => {
+      this.canvas.discardActiveObject();
+      this.canvas.requestRenderAll();
+      this.saveState();
+    });
+
+    this.canvas.add(text);
+    // 激活新添加的文本对象，让用户看到矩形框
+    this.canvas.setActiveObject(text);
+    this.canvas.requestRenderAll();
+    
+    // 监听画布点击事件，当点击画布外区域时完成文本编辑
+    const canvasClickHandler = (options: any) => {
+      // 检查点击的是否是文本对象本身
+      if (options.target !== text) {
+        // 如果点击的不是文本对象，则退出编辑模式
+        if (text.isEditing) {
+          text.exitEditing();
+        }
+        // 移除事件监听器
+        this.canvas.off('mouse:down', canvasClickHandler);
+      }
+    };
+    
+    // 延迟添加事件监听器，避免立即触发
+    setTimeout(() => {
+      this.canvas.on('mouse:down', canvasClickHandler);
+    }, 100);
+    
+    this.saveState();
+    
+    // 移除画布点击事件监听器
+    if (this.handleCanvasTextAddBound) {
+      this.canvas.off('mouse:down', this.handleCanvasTextAddBound);
+    }
   }
 
   undo() {

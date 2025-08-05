@@ -19,8 +19,13 @@
         </button>
 
         <div class="text-controls">
-            <input type="color" [(ngModel)]="textColor">
-            <button (click)="addText()">添加文本</button>
+            <div class="color-buttons" *ngIf="showTextControls">
+                <button class="color-button" style="background-color: #000000;" (click)="selectTextColor('#000000')"></button>
+                <button class="color-button" style="background-color: #ff0000;" (click)="selectTextColor('#ff0000')"></button>
+                <button class="color-button" style="background-color: #0000ff;" (click)="selectTextColor('#0000ff')"></button>
+                <input type="range" min="10" max="72" [(ngModel)]="textSize" (input)="setTextSize(textSize)">
+            </div>
+            <button (click)="toggleTextControls()">添加文本</button>
         </div>
 
         <button (click)="undo()">撤销</button>
