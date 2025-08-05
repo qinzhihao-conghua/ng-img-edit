@@ -319,7 +319,6 @@ export class ImageEditorComponent implements AfterViewInit {
       this.isCropMode = false;
 
       this.canvas.renderAll();
-      this.saveState();
 
     });
     
@@ -946,5 +945,86 @@ export class ImageEditorComponent implements AfterViewInit {
   // 设置文本大小
   setTextSize(size: number) {
     this.textSize = size;
+  }
+
+  // 放大图片
+  zoomIn() {
+    if (!this.imageObject) return;
+    
+    // 结束其他功能
+    this.endDrawingMode();
+    this.endCropMode();
+    this.endMosaicMode();
+    this.endTextMode();
+    
+    // 启用图片的选择和拖拽功能
+    this.imageObject.selectable = true;
+    this.imageObject.evented = true;
+    this.imageObject.hasControls = false;
+    this.imageObject.hasBorders = false;
+    this.imageObject.lockMovementX = false;
+    this.imageObject.lockMovementY = false;
+    
+    // 增加图片的缩放比例
+    const currentScaleX = this.imageObject.scaleX || 1;
+    const currentScaleY = this.imageObject.scaleY || 1;
+    
+    // 限制最大缩放比例
+    if (currentScaleX < 5 && currentScaleY < 5) {
+      this.imageObject.scaleX = currentScaleX * 1.2;
+      this.imageObject.scaleY = currentScaleY * 1.2;
+      
+      // 重新计算图片位置，使其居中
+      const canvasWidth = this.canvas.width || 800;
+      const canvasHeight = this.canvas.height || 500;
+      const imgWidth = (this.imageObject.width || 0) * (this.imageObject.scaleX || 1);
+      const imgHeight = (this.imageObject.height || 0) * (this.imageObject.scaleY || 1);
+      
+      this.imageObject.left = (canvasWidth - imgWidth) / 2;
+      this.imageObject.top = (canvasHeight - imgHeight) / 2;
+      
+      this.canvas.renderAll();
+    }
+  }
+
+  // 缩小图片
+  zoomOut() {
+    if (!this.imageObject) return;
+    
+    // 结束其他功能
+    this.endDrawingMode();
+    this.endCropMode();
+    this.endMosaicMode();
+    this.endTextMode();
+    
+    // 启用图片的选择和拖拽功能
+    this.imageObject.selectable = true;
+    this.imageObject.evented = true;
+    this.imageObject.hasControls = false;
+    this.imageObject.hasBorders = false;
+    this.imageObject.lockMovementX = false;
+    this.imageObject.lockMovementY = false;
+    
+    // 减少图片的缩放比例
+    const currentScaleX = this.imageObject.scaleX || 1;
+    const currentScaleY = this.imageObject.scaleY || 1;
+    
+    // 限制最小缩放比例
+    if (currentScaleX > 0.2 && currentScaleY > 0.2) {
+      this.imageObject.scaleX = currentScaleX * 0.8;
+      this.imageObject.scaleY = currentScaleY * 0.8;
+      
+      // 重新计算图片位置，使其居中
+      const canvasWidth = this.canvas.width || 800;
+      const canvasHeight = this.canvas.height || 500;
+      const imgWidth = (this.imageObject.width || 0) * (this.imageObject.scaleX || 1);
+      const imgHeight = (this.imageObject.height || 0) * (this.imageObject.scaleY || 1);
+      
+      this.imageObject.left = (canvasWidth - imgWidth) / 2;
+      this.imageObject.top = (canvasHeight - imgHeight) / 2;
+      
+      this.canvas.renderAll();
+      this.saveState();
+    }
   }
 }

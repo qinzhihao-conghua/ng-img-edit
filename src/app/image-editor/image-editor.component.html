@@ -31,6 +31,8 @@
         <button (click)="undo()">撤销</button>
         <button (click)="redo()">重做</button>
         <button (click)="reset()">重置</button>
+        <button (click)="zoomIn()">放大</button>
+        <button (click)="zoomOut()">缩小</button>
         <button (click)="exportAsPNG()">导出PNG</button>
 
         <div *ngIf="isDrawingMode" class="size-control">
