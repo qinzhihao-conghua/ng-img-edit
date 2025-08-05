@@ -131,7 +131,7 @@ export class ImageEditorComponent implements AfterViewInit {
         // 在originalImage设置完成后保存状态
         this.saveState();
       });
-    });
+    }, { crossOrigin: '*' });
   }
 
   toggleDrawingMode() {
@@ -872,6 +872,31 @@ export class ImageEditorComponent implements AfterViewInit {
           });
         } catch (error) {
           console.error('Error saving image object:', error);
+          // 如果toDataURL失败（可能是跨域问题），则使用原始图片URL
+          if (this.originalImage) {
+            canvasData.objects.push({
+              type: 'image',
+              src: this.originalImage.getSrc(),
+              left: obj.left,
+              top: obj.top,
+              scaleX: obj.scaleX,
+              scaleY: obj.scaleY,
+              width: obj.width,
+              height: obj.height
+            });
+          } else {
+            // 如果没有原始图片，则保存一个占位符
+            canvasData.objects.push({
+              type: 'image',
+              src: '',
+              left: obj.left,
+              top: obj.top,
+              scaleX: obj.scaleX,
+              scaleY: obj.scaleY,
+              width: obj.width,
+              height: obj.height
+            });
+          }
         }
       } else {
         // 对于其他对象，直接序列化
