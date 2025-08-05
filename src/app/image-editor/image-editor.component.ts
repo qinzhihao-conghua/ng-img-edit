@@ -25,7 +25,7 @@ export class ImageEditorComponent implements AfterViewInit {
   mosaicSize: number = 24;
   mosaicStyle: string = 'circle';
   textContent: string = '添加文本';
-  textColor: string = '#000000';
+  textColor: string = '#ff3300';
   textSize: number = 24;
   showTextControls: boolean = false;
   selectedTextObject: fabric.IText | null = null;
@@ -114,7 +114,7 @@ export class ImageEditorComponent implements AfterViewInit {
       
       this.canvas.isDrawingMode = true;
       this.canvas.freeDrawingBrush.width = this.brushSize;
-      this.canvas.freeDrawingBrush.color = '#000000';
+      this.canvas.freeDrawingBrush.color = '#ff3300';
     } else {
       this.canvas.isDrawingMode = false;
     }
@@ -308,15 +308,31 @@ export class ImageEditorComponent implements AfterViewInit {
     
     // 创建新的图片对象
     fabric.Image.fromURL(dataURL, (img) => {
+      // 设置新图片的属性，防止拖动和通过控制点调整大小
       img.set({
         left: (this.canvas.width - cropWidth) / 2,
         top: (this.canvas.height - cropHeight) / 2,
         scaleX: 1,
-        scaleY: 1
+        scaleY: 1,
+        selectable: false, // 禁用选择功能，防止出现控制点
+        evented: false,    // 禁用事件处理，防止拖动
+        lockMovementX: true, // 锁定X轴移动
+        lockMovementY: true, // 锁定Y轴移动
+        lockRotation: true,  // 锁定旋转
+        lockScalingX: true,  // 锁定X轴缩放
+        lockScalingY: true,  // 锁定Y轴缩放
+        hasControls: false,  // 隐藏控制点
+        hasBorders: false    // 隐藏边框
       });
       
-      // 替换原图片
-      this.canvas.remove(this.imageObject);
+      // 清除画布上的其他元素（绘制的图形和文本）
+      // 保留背景和新图片，移除其他所有对象
+      const objectsToRemove = this.canvas.getObjects().filter(obj => 
+        obj !== img && obj !== this.canvas.backgroundImage
+      );
+      objectsToRemove.forEach(obj => this.canvas.remove(obj));
+      
+      // 添加新图片
       this.canvas.add(img);
       this.imageObject = img;
       
