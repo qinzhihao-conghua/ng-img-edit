@@ -1,4 +1,3 @@
-// image-editor.component.ts
 import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { fabric } from 'fabric';
 
@@ -723,11 +722,6 @@ export class ImageEditorComponent implements AfterViewInit {
     }, 100);
     
     this.saveState();
-    
-    // 移除画布点击事件监听器
-    if (this.handleCanvasTextAddBound) {
-      this.canvas.off('mouse:down', this.handleCanvasTextAddBound);
-    }
   }
 
   undo() {
