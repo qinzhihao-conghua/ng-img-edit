@@ -30,7 +30,17 @@ export class ImageEditorComponent implements AfterViewInit {
   showTextControls: boolean = false;
   selectedTextObject: fabric.IText | null = null;
   handleCanvasTextAddBound: ((options: any) => void) | null = null;
-
+  imageConfig={
+    selectable: false, // 禁用选择功能，防止出现控制点
+    evented: false,    // 禁用事件处理，防止拖动
+    lockMovementX: true, // 锁定X轴移动
+    lockMovementY: true, // 锁定Y轴移动
+    lockRotation: true,  // 锁定旋转
+    lockScalingX: true,  // 锁定X轴缩放
+    lockScalingY: true,  // 锁定Y轴缩放
+    hasControls: false,  // 隐藏控制点
+    hasBorders: false    // 隐藏边框
+  };
   ngAfterViewInit() {
     this.initializeCanvas();
   }
@@ -45,23 +55,18 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   loadImage(event: any) {
-    console.log('Load image called');
     const file = event.target.files[0];
     if (!file) {
-      console.log('No file selected');
       return;
     }
     console.log('File selected:', file.name);
 
     const reader = new FileReader();
     reader.onload = (e: any) => {
-      console.log('File read completed');
       fabric.Image.fromURL(e.target.result, (img) => {
-        console.log('Image created from URL');
         // 清除当前内容
         this.canvas.clear();
         this.imageObject = img;
-        console.log('Image object set:', img);
         
         // 缩放图片以适应画布
         const scale = Math.min(
@@ -70,23 +75,13 @@ export class ImageEditorComponent implements AfterViewInit {
           (this.canvas.height || 500) / (img.height || 1)
         );
         img.scale(scale);
-        console.log('Image scaled:', scale);
 
         // 居中图片
         img.set({
           left: ((this.canvas.width || 800) - (img.width || 1) * scale) / 2,
           top: ((this.canvas.height || 500) - (img.height || 1) * scale) / 2,
-          selectable: false, // 禁用选择功能，防止出现控制点
-          evented: false,    // 禁用事件处理，防止拖动
-          lockMovementX: true, // 锁定X轴移动
-          lockMovementY: true, // 锁定Y轴移动
-          lockRotation: true,  // 锁定旋转
-          lockScalingX: true,  // 锁定X轴缩放
-          lockScalingY: true,  // 锁定Y轴缩放
-          hasControls: false,  // 隐藏控制点
-          hasBorders: false    // 隐藏边框
+          ...this.imageConfig
         });
-        console.log('Image positioned and made unselectable without controls');
 
         this.canvas.add(img);
         this.canvas.renderAll();
@@ -94,10 +89,8 @@ export class ImageEditorComponent implements AfterViewInit {
         // 保存原始图片（未缩放和居中处理的版本）
         (img as any).clone((clonedImg: fabric.Image) => {
           this.originalImage = clonedImg;
-          console.log('Original image saved');
           // 在originalImage设置完成后保存状态
           this.saveState();
-          console.log('Image added to canvas and state saved');
         });
       });
     };
@@ -105,13 +98,10 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   toggleDrawingMode() {
-    console.log('Toggling drawing mode, current state:', this.isDrawingMode);
     this.isDrawingMode = !this.isDrawingMode;
-    console.log('New drawing mode state:', this.isDrawingMode);
     
     // 结束其他功能
     if (this.isDrawingMode) {
-      console.log('Entering drawing mode');
       this.endCropMode();
       this.endMosaicMode();
       this.endTextMode();
@@ -122,10 +112,8 @@ export class ImageEditorComponent implements AfterViewInit {
       
       // 监听自由绘制路径创建完成事件
       this.canvas.on('path:created', (options: any) => {
-        console.log('Path created, options:', options);
         // 获取创建的路径对象
         const path = options.path || options.target;
-        console.log('Path object:', path);
         if (path) {
           // 设置路径对象的属性，防止被选择和控制
           path.set({
@@ -142,12 +130,10 @@ export class ImageEditorComponent implements AfterViewInit {
           // 重新渲染画布以应用更改
           this.canvas.requestRenderAll();
         } else {
-          console.log('Path object not found in options');
         }
         this.saveState();
       });
     } else {
-      console.log('Exiting drawing mode');
       this.canvas.isDrawingMode = false;
       // 移除事件监听器
       this.canvas.off('path:created');
@@ -157,9 +143,7 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   toggleCropMode() {
-    console.log('Toggle crop mode called, current state:', this.isCropMode);
     this.isCropMode = !this.isCropMode;
-    console.log('New crop mode state:', this.isCropMode);
     
     // 结束其他功能
     if (this.isCropMode) {
@@ -168,7 +152,6 @@ export class ImageEditorComponent implements AfterViewInit {
       this.endTextMode();
       
       this.canvas.isDrawingMode = false;
-      console.log('Entering crop mode');
       // 创建裁剪矩形，使其与图片大小一致
       const img = this.imageObject;
       let width = 200;
@@ -177,12 +160,10 @@ export class ImageEditorComponent implements AfterViewInit {
       let top = 100;
       
       if (img) {
-        console.log('Image object found:', img);
         width = img.width * (img.scaleX || 1);
         height = img.height * (img.scaleY || 1);
         left = img.left || 0;
         top = img.top || 0;
-        console.log('Crop rect dimensions:', { width, height, left, top });
         // 确保图片在裁剪模式下可选择
         img.selectable = true;
         img.evented = true;
@@ -205,19 +186,12 @@ export class ImageEditorComponent implements AfterViewInit {
         lockRotation: true
       });
 
-      console.log('Crop rect created:', this.cropRect);
       this.canvas.add(this.cropRect);
       this.canvas.setActiveObject(this.cropRect);
       
       // 添加事件监听器来处理裁剪矩形的修改
       this.cropRect.on('modified', () => {
         if (this.cropRect) {
-          console.log('Crop rect modified:', {
-            left: this.cropRect.left,
-            top: this.cropRect.top,
-            width: this.cropRect.width,
-            height: this.cropRect.height
-          });
           // 确保裁剪矩形的边界坐标是最新的
           this.cropRect.setCoords();
         }
@@ -226,12 +200,6 @@ export class ImageEditorComponent implements AfterViewInit {
       // 添加事件监听器来处理裁剪矩形的缩放
       this.cropRect.on('scaling', () => {
         if (this.cropRect) {
-          console.log('Crop rect scaling:', {
-            left: this.cropRect.left,
-            top: this.cropRect.top,
-            width: this.cropRect.width,
-            height: this.cropRect.height
-          });
           // 确保裁剪矩形的边界坐标是最新的
           this.cropRect.setCoords();
         }
@@ -240,23 +208,14 @@ export class ImageEditorComponent implements AfterViewInit {
       // 添加事件监听器来处理裁剪矩形的移动
       this.cropRect.on('moving', () => {
         if (this.cropRect) {
-          console.log('Crop rect moving:', {
-            left: this.cropRect.left,
-            top: this.cropRect.top,
-            width: this.cropRect.width,
-            height: this.cropRect.height
-          });
           // 确保裁剪矩形的边界坐标是最新的
           this.cropRect.setCoords();
         }
       });
       
-      console.log('Crop rect added to canvas');
     } else {
-      console.log('Exiting crop mode');
       // 移除裁剪矩形
       if (this.cropRect) {
-        console.log('Removing crop rect');
         this.canvas.remove(this.cropRect);
         this.cropRect = null;
       } else {
@@ -264,7 +223,6 @@ export class ImageEditorComponent implements AfterViewInit {
       }
       // 恢复图片的可选择性
       if (this.imageObject) {
-        console.log('Restoring image selectability');
         this.imageObject.selectable = true;
         this.imageObject.evented = true;
       } else {
@@ -276,10 +234,7 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   applyCrop() {
-    console.log('Apply crop called');
-    
     if (!this.imageObject || !this.cropRect) {
-      console.log('Missing image object or crop rect');
       return;
     }
 
@@ -294,7 +249,6 @@ export class ImageEditorComponent implements AfterViewInit {
     const imgLeft = img.left || 0;
     const imgTop = img.top || 0;
 
-    console.log('Image info:', { imgLeft, imgTop, scale, imgWidth: img.width, imgHeight: img.height });
 
     // 获取裁剪区域的边界坐标（相对于画布）
     const rectLeft = rect.left || 0;
@@ -306,7 +260,6 @@ export class ImageEditorComponent implements AfterViewInit {
     const rectRight = rectLeft + rectWidth;
     const rectBottom = rectTop + rectHeight;
     
-    console.log('Crop rect info:', { rectLeft, rectTop, rectWidth, rectHeight });
     
     // 计算图片边界（相对于画布）
     const imgRight = imgLeft + (img.width || 0) * scale;
@@ -323,8 +276,6 @@ export class ImageEditorComponent implements AfterViewInit {
     const cropY = (cropTop - imgTop) / scale;
     const cropWidth = (cropRight - cropLeft) / scale;
     const cropHeight = (cropBottom - cropTop) / scale;
-
-    console.log('Calculated crop area:', { cropX, cropY, cropWidth, cropHeight });
 
     // 检查裁剪区域是否有效
     if (cropWidth <= 0 || cropHeight <= 0) {
@@ -349,15 +300,7 @@ export class ImageEditorComponent implements AfterViewInit {
         top: (this.canvas.height - cropHeight) / 2,
         scaleX: 1,
         scaleY: 1,
-        selectable: false, // 禁用选择功能，防止出现控制点
-        evented: false,    // 禁用事件处理，防止拖动
-        lockMovementX: true, // 锁定X轴移动
-        lockMovementY: true, // 锁定Y轴移动
-        lockRotation: true,  // 锁定旋转
-        lockScalingX: true,  // 锁定X轴缩放
-        lockScalingY: true,  // 锁定Y轴缩放
-        hasControls: false,  // 隐藏控制点
-        hasBorders: false    // 隐藏边框
+        ...this.imageConfig
       });
       
       // 清除画布上的其他元素（绘制的图形和文本）
@@ -370,9 +313,6 @@ export class ImageEditorComponent implements AfterViewInit {
       // 添加新图片
       this.canvas.add(img);
       this.imageObject = img;
-      
-      // 验证图片是否已替换
-      console.log('Image replaced, new image object:', this.imageObject);
 
       // 移除裁剪矩形
       this.canvas.remove(rect);
@@ -382,13 +322,10 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.renderAll();
       this.saveState();
 
-      console.log('Crop applied successfully');
     });
     
     // 如果fromURL是异步的，我们需要return以避免继续执行
     return;
-
-    // 这段代码已经被上面的fromURL方法替代
   }
 
   toggleMosaicMode() {
@@ -401,14 +338,11 @@ export class ImageEditorComponent implements AfterViewInit {
       this.endTextMode();
       
       this.canvas.isDrawingMode = false;
-      // 进入马赛克模式
-      console.log('Entering mosaic mode');
       
       // 禁用图片的选择功能，防止拖动
       if (this.imageObject) {
         this.imageObject.selectable = false;
         this.imageObject.evented = false;
-        console.log('Image selectability disabled');
       }
       
       // 禁用画布的选中框显示
@@ -418,16 +352,12 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.on('mouse:move', this.applyMosaic.bind(this));
       this.canvas.on('mouse:down', this.startMosaic.bind(this));
       this.canvas.on('mouse:up', this.stopMosaic.bind(this));
-      console.log('Mouse events bound');
     } else {
-      // 退出马赛克模式
-      console.log('Exiting mosaic mode');
       
       // 恢复图片的选择功能
       if (this.imageObject) {
         this.imageObject.selectable = true;
         this.imageObject.evented = true;
-        console.log('Image selectability restored');
       }
       
       // 恢复画布的选中框显示
@@ -437,7 +367,6 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.off('mouse:move', this.applyMosaic.bind(this));
       this.canvas.off('mouse:down', this.startMosaic.bind(this));
       this.canvas.off('mouse:up', this.stopMosaic.bind(this));
-      console.log('Mouse events unbound');
     }
     
     this.saveState();
@@ -597,7 +526,6 @@ export class ImageEditorComponent implements AfterViewInit {
     // 更新图片源
     (img as any).setElement(canvas);
     this.canvas.renderAll();
-    // 注意：在鼠标移动过程中不保存状态，只在停止操作时保存
   }
 
   // 在指定位置应用马赛克效果
@@ -803,6 +731,10 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   undo() {
+    this.endTextMode();
+    this.endCropMode();
+    this.endMosaicMode();
+    this.endDrawingMode();
     if (this.historyIndex <= 0) return;
 
     this.historyIndex--;
@@ -811,6 +743,10 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   redo() {
+    this.endTextMode();
+    this.endCropMode();
+    this.endMosaicMode();
+    this.endDrawingMode();
     if (this.historyIndex >= this.history.length - 1) return;
 
     this.historyIndex++;
@@ -819,10 +755,12 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   reset() {
-    console.log('Reset called, originalImage:', this.originalImage);
+    this.endTextMode();
+    this.endCropMode();
+    this.endMosaicMode();
+    this.endDrawingMode();
     // 检查originalImage是否存在
     if (!this.originalImage) {
-      console.log('Original image is undefined, cannot reset');
       return;
     }
 
@@ -830,12 +768,8 @@ export class ImageEditorComponent implements AfterViewInit {
     // 克隆原始图片
     (this.originalImage as any).clone((img: fabric.Image) => {
       this.imageObject = img;
-      
-      console.log('Cloned image:', img);
-      
       // 确保克隆的图片有有效的宽度和高度
       if (!img.width || !img.height) {
-        console.log('Cloned image has invalid dimensions');
         return;
       }
       
@@ -847,13 +781,11 @@ export class ImageEditorComponent implements AfterViewInit {
       );
       img.scale(scale);
 
-      console.log('Scaled image with scale:', scale);
-
       // 居中图片
       img.set({
         left: ((this.canvas.width || 800) - (img.width || 1) * scale) / 2,
         top: ((this.canvas.height || 500) - (img.height || 1) * scale) / 2,
-        selectable: true
+        ...this.imageConfig
       });
       
       this.canvas.add(img);
@@ -880,15 +812,12 @@ export class ImageEditorComponent implements AfterViewInit {
       // 保存初始状态
       this.saveState();
       
-      console.log('Reset completed');
     });
   }
 
   saveState() {
-    console.log('Saving state, history index:', this.historyIndex);
     // 创建一个不包含历史记录的canvas状态
     const objects = this.canvas.getObjects();
-    console.log('Objects on canvas:', objects.length, objects);
     const canvasData = {
       objects: [],
       background: this.canvas.backgroundColor
@@ -896,7 +825,6 @@ export class ImageEditorComponent implements AfterViewInit {
 
     // 保存图片对象和其他对象
     objects.forEach(obj => {
-      console.log('Processing object:', obj.type, obj);
       if (obj.type === 'image') {
         try {
           // 对于图片对象，保存其数据URL
@@ -916,7 +844,6 @@ export class ImageEditorComponent implements AfterViewInit {
         }
       } else {
         // 对于其他对象，直接序列化
-        console.log('Serializing object:', obj.type);
         canvasData.objects.push(obj.toObject());
       }
     });
@@ -928,9 +855,7 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   loadState(state: string) {
-    console.log('Loading state, history index:', this.historyIndex);
     const canvasData = JSON.parse(state);
-    console.log('Canvas data to load:', canvasData);
     
     // 清空画布
     this.canvas.clear();
@@ -952,7 +877,8 @@ export class ImageEditorComponent implements AfterViewInit {
               left: objData.left,
               top: objData.top,
               scaleX: objData.scaleX,
-              scaleY: objData.scaleY
+              scaleY: objData.scaleY,
+              ...this.imageConfig
             });
             this.canvas.add(img);
             // 将图片发送到背景，确保后续绘制的线条在其上方
@@ -968,9 +894,7 @@ export class ImageEditorComponent implements AfterViewInit {
         const promise = new Promise<void>((resolve) => {
           // 确保objData是有效的对象
           if (objData && typeof objData === 'object') {
-            console.log('Enlivening object:', objData);
             (fabric.util as any).enlivenObjects([objData], (enlivenedObjects: fabric.Object[]) => {
-              console.log('Enlivened objects:', enlivenedObjects);
               enlivenedObjects.forEach((obj) => {
                 this.canvas.add(obj);
               });
@@ -978,7 +902,6 @@ export class ImageEditorComponent implements AfterViewInit {
             });
           } else {
             // 如果objData无效，则直接resolve
-            console.log('Invalid object data:', objData);
             resolve();
           }
         });
@@ -988,9 +911,7 @@ export class ImageEditorComponent implements AfterViewInit {
     
     // 等待所有对象都恢复完成后再渲染
     Promise.all(promises).then(() => {
-      console.log('All objects loaded, rendering canvas');
       this.canvas.renderAll();
-      console.log('Canvas rendered, objects on canvas:', this.canvas.getObjects().length);
     });
   }
 
