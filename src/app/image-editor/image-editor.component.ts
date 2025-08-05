@@ -29,6 +29,7 @@ export class ImageEditorComponent implements AfterViewInit {
   showTextControls: boolean = false;
   selectedTextObject: fabric.IText | null = null;
   handleCanvasTextAddBound: ((options: any) => void) | null = null;
+  imageUrl: string = '';
   imageConfig={
     selectable: false, // 禁用选择功能，防止出现控制点
     evented: false,    // 禁用事件处理，防止拖动
@@ -94,6 +95,43 @@ export class ImageEditorComponent implements AfterViewInit {
       });
     };
     reader.readAsDataURL(file);
+  }
+
+  loadImageFromUrl() {
+    if (!this.imageUrl) {
+      return;
+    }
+
+    fabric.Image.fromURL(this.imageUrl, (img) => {
+      // 清除当前内容
+      this.canvas.clear();
+      this.imageObject = img;
+      
+      // 缩放图片以适应画布
+      const scale = Math.min(
+        1,
+        (this.canvas.width || 800) / (img.width || 1),
+        (this.canvas.height || 500) / (img.height || 1)
+      );
+      img.scale(scale);
+
+      // 居中图片
+      img.set({
+        left: ((this.canvas.width || 800) - (img.width || 1) * scale) / 2,
+        top: ((this.canvas.height || 500) - (img.height || 1) * scale) / 2,
+        ...this.imageConfig
+      });
+
+      this.canvas.add(img);
+      this.canvas.renderAll();
+      
+      // 保存原始图片（未缩放和居中处理的版本）
+      (img as any).clone((clonedImg: fabric.Image) => {
+        this.originalImage = clonedImg;
+        // 在originalImage设置完成后保存状态
+        this.saveState();
+      });
+    });
   }
 
   toggleDrawingMode() {

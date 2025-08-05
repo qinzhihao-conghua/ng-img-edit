@@ -37,6 +37,13 @@
     display: none;
 }
 
+.url-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+}
+
 .text-controls {
     display: flex;
     gap: 5px;

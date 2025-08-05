@@ -2,7 +2,9 @@
 <div class="editor-container">
     <div class="toolbar">
         <input type="file" (change)="loadImage($event)" accept="image/*" class="file-input" #fileInput>
+        <input type="text" [(ngModel)]="imageUrl" placeholder="输入图片URL" class="url-input">
 
+        <button (click)="loadImageFromUrl()">从URL加载</button>
         <button (click)="fileInput.click()">导入图片</button>
 
         <button (click)="toggleDrawingMode()" [class.active]="isDrawingMode">
