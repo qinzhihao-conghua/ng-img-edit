@@ -22,7 +22,7 @@ export class ImageEditorComponent implements AfterViewInit {
   isMosaicMode: boolean = false;
   cropRect: fabric.Rect | null = null;
   brushSize: number = 10;
-  mosaicSize: number = 10;
+  mosaicSize: number = 24;
   mosaicStyle: string = 'circle';
   textContent: string = '添加文本';
   textColor: string = '#000000';
@@ -60,10 +60,6 @@ export class ImageEditorComponent implements AfterViewInit {
         this.imageObject = img;
         console.log('Image object set:', img);
         
-        // 保存原始图片
-        this.originalImage = (img as any).clone(() => {}) as fabric.Image;
-        console.log('Original image saved');
-
         // 缩放图片以适应画布
         const scale = Math.min(
           1,
@@ -83,8 +79,15 @@ export class ImageEditorComponent implements AfterViewInit {
 
         this.canvas.add(img);
         this.canvas.renderAll();
-        this.saveState();
-        console.log('Image added to canvas and state saved');
+        
+        // 保存原始图片（未缩放和居中处理的版本）
+        (img as any).clone((clonedImg: fabric.Image) => {
+          this.originalImage = clonedImg;
+          console.log('Original image saved');
+          // 在originalImage设置完成后保存状态
+          this.saveState();
+          console.log('Image added to canvas and state saved');
+        });
       });
     };
     reader.readAsDataURL(file);
@@ -100,6 +103,8 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.freeDrawingBrush.width = this.brushSize;
       this.canvas.freeDrawingBrush.color = '#000000';
     }
+    
+    this.saveState();
   }
 
   toggleCropMode() {
@@ -214,6 +219,8 @@ export class ImageEditorComponent implements AfterViewInit {
         console.log('No image object to restore');
       }
     }
+    
+    this.saveState();
   }
 
   applyCrop() {
@@ -392,10 +399,9 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.off('mouse:down', this.startMosaic.bind(this));
       this.canvas.off('mouse:up', this.stopMosaic.bind(this));
       console.log('Mouse events unbound');
-      
-      // 保存状态
-      this.saveState();
     }
+    
+    this.saveState();
   }
 
   // 马赛克功能相关变量
@@ -569,39 +575,68 @@ export class ImageEditorComponent implements AfterViewInit {
     this.loadState(state);
   }
 
-  redo() {
-    if (this.historyIndex >= this.history.length - 1) return;
-
-    this.historyIndex++;
-    const state = this.history[this.historyIndex];
-    this.loadState(state);
-  }
-
   reset() {
+    console.log('Reset called, originalImage:', this.originalImage);
     // 检查originalImage是否存在
-    if (!this.originalImage) return;
+    if (!this.originalImage) {
+      console.log('Original image is undefined, cannot reset');
+      return;
+    }
 
     this.canvas.clear();
     // 克隆原始图片
-    const img = (this.originalImage as any).clone() as fabric.Image;
-    this.imageObject = img;
-    this.canvas.add(img);
-    
-    // 重置所有模式
-    this.isDrawingMode = false;
-    this.isCropMode = false;
-    this.isMosaicMode = false;
-    this.canvas.isDrawingMode = false;
-    
-    // 移除裁剪矩形（如果存在）
-    if (this.cropRect) {
-      this.canvas.remove(this.cropRect);
-      this.cropRect = null;
-    }
-    
-    this.canvas.renderAll();
-    // 保存状态
-    this.saveState();
+    (this.originalImage as any).clone((img: fabric.Image) => {
+      this.imageObject = img;
+      
+      console.log('Cloned image:', img);
+      
+      // 确保克隆的图片有有效的宽度和高度
+      if (!img.width || !img.height) {
+        console.log('Cloned image has invalid dimensions');
+        return;
+      }
+      
+      // 缩放图片以适应画布
+      const scale = Math.min(
+        1,
+        (this.canvas.width || 800) / (img.width || 1),
+        (this.canvas.height || 500) / (img.height || 1)
+      );
+      img.scale(scale);
+
+      console.log('Scaled image with scale:', scale);
+
+      // 居中图片
+      img.set({
+        left: ((this.canvas.width || 800) - (img.width || 1) * scale) / 2,
+        top: ((this.canvas.height || 500) - (img.height || 1) * scale) / 2,
+        selectable: true
+      });
+      
+      this.canvas.add(img);
+      
+      // 重置所有模式
+      this.isDrawingMode = false;
+      this.isCropMode = false;
+      this.isMosaicMode = false;
+      this.canvas.isDrawingMode = false;
+      
+      // 移除裁剪矩形（如果存在）
+      if (this.cropRect) {
+        this.canvas.remove(this.cropRect);
+        this.cropRect = null;
+      }
+      
+      this.canvas.renderAll();
+      
+      // 重置历史记录
+      this.history = [];
+      this.historyIndex = -1;
+      // 保存初始状态
+      this.saveState();
+      
+      console.log('Reset completed');
+    });
   }
 
   saveState() {
