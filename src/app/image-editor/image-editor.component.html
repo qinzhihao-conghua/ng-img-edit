@@ -21,7 +21,8 @@
         <div class="text-controls">
             <input type="text" [(ngModel)]="textContent" placeholder="输入文本">
             <input type="color" [(ngModel)]="textColor">
-            <button (click)="addText()">添加文本</button>
+            <button (click)="addText(); toggleTextMode()" *ngIf="!isTextMode">添加文本</button>
+            <button (click)="toggleTextMode()" *ngIf="isTextMode">完成文本</button>
         </div>
 
         <button (click)="undo()">撤销</button>
@@ -48,7 +49,7 @@
             </select>
         </div>
 
-        <div class="size-control">
+        <div *ngIf="isTextMode" class="size-control">
             <label>文本大小: {{textSize}}px</label>
             <input type="range" min="10" max="72" [(ngModel)]="textSize" (input)="setTextSize(textSize)">
         </div>

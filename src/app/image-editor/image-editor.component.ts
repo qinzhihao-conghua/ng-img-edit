@@ -95,13 +95,17 @@ export class ImageEditorComponent implements AfterViewInit {
 
   toggleDrawingMode() {
     this.isDrawingMode = !this.isDrawingMode;
-    this.canvas.isDrawingMode = this.isDrawingMode;
-    this.isCropMode = false;
-    this.isMosaicMode = false;
-
+    
+    // 结束其他功能
     if (this.isDrawingMode) {
+      this.endCropMode();
+      this.endMosaicMode();
+      
+      this.canvas.isDrawingMode = true;
       this.canvas.freeDrawingBrush.width = this.brushSize;
       this.canvas.freeDrawingBrush.color = '#000000';
+    } else {
+      this.canvas.isDrawingMode = false;
     }
     
     this.saveState();
@@ -111,11 +115,13 @@ export class ImageEditorComponent implements AfterViewInit {
     console.log('Toggle crop mode called, current state:', this.isCropMode);
     this.isCropMode = !this.isCropMode;
     console.log('New crop mode state:', this.isCropMode);
-    this.isDrawingMode = false;
-    this.isMosaicMode = false;
-    this.canvas.isDrawingMode = false;
-
+    
+    // 结束其他功能
     if (this.isCropMode) {
+      this.endDrawingMode();
+      this.endMosaicMode();
+      
+      this.canvas.isDrawingMode = false;
       console.log('Entering crop mode');
       // 创建裁剪矩形，使其与图片大小一致
       const img = this.imageObject;
@@ -357,11 +363,13 @@ export class ImageEditorComponent implements AfterViewInit {
 
   toggleMosaicMode() {
     this.isMosaicMode = !this.isMosaicMode;
-    this.isDrawingMode = false;
-    this.isCropMode = false;
-    this.canvas.isDrawingMode = false;
-
+    
+    // 结束其他功能
     if (this.isMosaicMode) {
+      this.endDrawingMode();
+      this.endCropMode();
+      
+      this.canvas.isDrawingMode = false;
       // 进入马赛克模式
       console.log('Entering mosaic mode');
       
@@ -408,6 +416,49 @@ export class ImageEditorComponent implements AfterViewInit {
   private isMosaicActive = false;
   private lastMosaicPoint = { x: -1, y: -1 };
   private lastMosaicTime = 0;
+  
+  // 结束绘制模式
+  private endDrawingMode() {
+    this.isDrawingMode = false;
+    this.canvas.isDrawingMode = false;
+  }
+  
+  // 结束裁剪模式
+  private endCropMode() {
+    if (this.isCropMode) {
+      this.isCropMode = false;
+      // 移除裁剪矩形
+      if (this.cropRect) {
+        this.canvas.remove(this.cropRect);
+        this.cropRect = null;
+      }
+      // 恢复图片的可选择性
+      if (this.imageObject) {
+        this.imageObject.selectable = true;
+        this.imageObject.evented = true;
+      }
+    }
+  }
+  
+  // 结束马赛克模式
+  private endMosaicMode() {
+    if (this.isMosaicMode) {
+      this.isMosaicMode = false;
+      // 恢复图片的选择功能
+      if (this.imageObject) {
+        this.imageObject.selectable = true;
+        this.imageObject.evented = true;
+      }
+      
+      // 恢复画布的选中框显示
+      this.canvas.selection = true;
+      
+      // 解绑鼠标事件
+      this.canvas.off('mouse:move', this.applyMosaic.bind(this));
+      this.canvas.off('mouse:down', this.startMosaic.bind(this));
+      this.canvas.off('mouse:up', this.stopMosaic.bind(this));
+    }
+  }
 
   startMosaic(event: fabric.IEvent) {
     // 检查是否是鼠标左键
@@ -770,8 +821,16 @@ export class ImageEditorComponent implements AfterViewInit {
     this.mosaicStyle = style;
   }
 
+  // 文本添加模式标志
+  isTextMode = false;
+  
   // 设置文本大小
   setTextSize(size: number) {
     this.textSize = size;
+  }
+  
+  // 切换文本模式
+  toggleTextMode() {
+    this.isTextMode = !this.isTextMode;
   }
 }
