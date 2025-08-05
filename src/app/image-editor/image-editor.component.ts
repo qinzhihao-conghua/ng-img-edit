@@ -297,79 +297,47 @@ export class ImageEditorComponent implements AfterViewInit {
       return;
     }
 
-    // 创建临时canvas来执行裁剪
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    if (!tempCtx) {
-      console.log('Failed to get canvas context');
-      return;
-    }
-
-    // 设置canvas尺寸
-    tempCanvas.width = cropWidth;
-    tempCanvas.height = cropHeight;
-
-    console.log('Temp canvas size:', { width: tempCanvas.width, height: tempCanvas.height });
-
-    // 绘制裁剪区域
-    tempCtx.drawImage(
-      img.getElement(),
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      cropWidth,
-      cropHeight
-    );
-
-    // 创建新的fabric图片对象，位置设置为画布中央
-    const croppedImg = new fabric.Image(tempCanvas, {
-      left: (this.canvas.width - cropWidth) / 2,
-      top: (this.canvas.height - cropHeight) / 2,
-      scaleX: 1,
-      scaleY: 1
-    });
-
-    console.log('Cropped image created');
-
-    // 打印原图片和裁剪后图片的信息
-    console.log('Original image info:', {
-      width: img.width,
-      height: img.height,
-      left: img.left,
-      top: img.top,
-      scaleX: img.scaleX,
-      scaleY: img.scaleY
+    // 使用fabric.js的toDataURL方法获取整个画布的内容
+    const dataURL = this.canvas.toDataURL({
+      left: cropLeft,
+      top: cropTop,
+      width: cropWidth,
+      height: cropHeight,
+      format: 'png'
     });
     
-    console.log('Cropped image info:', {
-      width: croppedImg.width,
-      height: croppedImg.height,
-      left: croppedImg.left,
-      top: croppedImg.top,
-      scaleX: croppedImg.scaleX,
-      scaleY: croppedImg.scaleY
+    // 创建新的图片对象
+    fabric.Image.fromURL(dataURL, (img) => {
+      img.set({
+        left: (this.canvas.width - cropWidth) / 2,
+        top: (this.canvas.height - cropHeight) / 2,
+        scaleX: 1,
+        scaleY: 1
+      });
+      
+      // 替换原图片
+      this.canvas.remove(this.imageObject);
+      this.canvas.add(img);
+      this.imageObject = img;
+      
+      // 验证图片是否已替换
+      console.log('Image replaced, new image object:', this.imageObject);
+
+      // 移除裁剪矩形
+      this.canvas.remove(rect);
+      this.cropRect = null;
+      this.isCropMode = false;
+
+      this.canvas.renderAll();
+      this.saveState();
+
+      console.log('Crop applied successfully');
     });
-
-    // 替换原图片
-    this.canvas.remove(img);
-    this.canvas.add(croppedImg);
-    this.imageObject = croppedImg;
     
-    // 验证图片是否已替换
-    console.log('Image replaced, new image object:', this.imageObject);
+    // 如果fromURL是异步的，我们需要return以避免继续执行
+    return;
 
-    // 移除裁剪矩形
-    this.canvas.remove(rect);
-    this.cropRect = null;
-    this.isCropMode = false;
-
-    this.canvas.renderAll();
-    this.saveState();
-
-    console.log('Crop applied successfully');
+    // 这段代码已经被上面的fromURL方法替代
   }
 
   toggleMosaicMode() {
