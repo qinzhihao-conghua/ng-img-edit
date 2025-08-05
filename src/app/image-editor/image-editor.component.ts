@@ -105,18 +105,30 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   toggleDrawingMode() {
+    console.log('Toggling drawing mode, current state:', this.isDrawingMode);
     this.isDrawingMode = !this.isDrawingMode;
+    console.log('New drawing mode state:', this.isDrawingMode);
     
     // 结束其他功能
     if (this.isDrawingMode) {
+      console.log('Entering drawing mode');
       this.endCropMode();
       this.endMosaicMode();
       
       this.canvas.isDrawingMode = true;
       this.canvas.freeDrawingBrush.width = this.brushSize;
       this.canvas.freeDrawingBrush.color = '#ff3300';
+      
+      // 监听自由绘制路径创建完成事件
+      this.canvas.on('path:created', () => {
+        console.log('Path created, saving state');
+        this.saveState();
+      });
     } else {
+      console.log('Exiting drawing mode');
       this.canvas.isDrawingMode = false;
+      // 移除事件监听器
+      this.canvas.off('path:created');
     }
     
     this.saveState();
@@ -761,6 +773,14 @@ export class ImageEditorComponent implements AfterViewInit {
     this.loadState(state);
   }
 
+  redo() {
+    if (this.historyIndex >= this.history.length - 1) return;
+
+    this.historyIndex++;
+    const state = this.history[this.historyIndex];
+    this.loadState(state);
+  }
+
   reset() {
     console.log('Reset called, originalImage:', this.originalImage);
     // 检查originalImage是否存在
@@ -800,6 +820,8 @@ export class ImageEditorComponent implements AfterViewInit {
       });
       
       this.canvas.add(img);
+      // 将图片发送到背景，确保后续绘制的线条在其上方
+      img.sendToBack();
       
       // 重置所有模式
       this.isDrawingMode = false;
@@ -826,8 +848,10 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   saveState() {
+    console.log('Saving state, history index:', this.historyIndex);
     // 创建一个不包含历史记录的canvas状态
     const objects = this.canvas.getObjects();
+    console.log('Objects on canvas:', objects.length, objects);
     const canvasData = {
       objects: [],
       background: this.canvas.backgroundColor
@@ -835,6 +859,7 @@ export class ImageEditorComponent implements AfterViewInit {
 
     // 保存图片对象和其他对象
     objects.forEach(obj => {
+      console.log('Processing object:', obj.type, obj);
       if (obj.type === 'image') {
         try {
           // 对于图片对象，保存其数据URL
@@ -854,6 +879,7 @@ export class ImageEditorComponent implements AfterViewInit {
         }
       } else {
         // 对于其他对象，直接序列化
+        console.log('Serializing object:', obj.type);
         canvasData.objects.push(obj.toObject());
       }
     });
@@ -865,7 +891,9 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   loadState(state: string) {
+    console.log('Loading state, history index:', this.historyIndex);
     const canvasData = JSON.parse(state);
+    console.log('Canvas data to load:', canvasData);
     
     // 清空画布
     this.canvas.clear();
@@ -890,6 +918,8 @@ export class ImageEditorComponent implements AfterViewInit {
               scaleY: objData.scaleY
             });
             this.canvas.add(img);
+            // 将图片发送到背景，确保后续绘制的线条在其上方
+            img.sendToBack();
             // 确保imageObject指向恢复的图片
             this.imageObject = img;
             resolve();
@@ -901,7 +931,9 @@ export class ImageEditorComponent implements AfterViewInit {
         const promise = new Promise<void>((resolve) => {
           // 确保objData是有效的对象
           if (objData && typeof objData === 'object') {
+            console.log('Enlivening object:', objData);
             (fabric.util as any).enlivenObjects([objData], (enlivenedObjects: fabric.Object[]) => {
+              console.log('Enlivened objects:', enlivenedObjects);
               enlivenedObjects.forEach((obj) => {
                 this.canvas.add(obj);
               });
@@ -909,6 +941,7 @@ export class ImageEditorComponent implements AfterViewInit {
             });
           } else {
             // 如果objData无效，则直接resolve
+            console.log('Invalid object data:', objData);
             resolve();
           }
         });
@@ -918,7 +951,9 @@ export class ImageEditorComponent implements AfterViewInit {
     
     // 等待所有对象都恢复完成后再渲染
     Promise.all(promises).then(() => {
+      console.log('All objects loaded, rendering canvas');
       this.canvas.renderAll();
+      console.log('Canvas rendered, objects on canvas:', this.canvas.getObjects().length);
     });
   }
 
