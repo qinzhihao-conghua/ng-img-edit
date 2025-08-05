@@ -76,9 +76,17 @@ export class ImageEditorComponent implements AfterViewInit {
         img.set({
           left: ((this.canvas.width || 800) - (img.width || 1) * scale) / 2,
           top: ((this.canvas.height || 500) - (img.height || 1) * scale) / 2,
-          selectable: true
+          selectable: false, // 禁用选择功能，防止出现控制点
+          evented: false,    // 禁用事件处理，防止拖动
+          lockMovementX: true, // 锁定X轴移动
+          lockMovementY: true, // 锁定Y轴移动
+          lockRotation: true,  // 锁定旋转
+          lockScalingX: true,  // 锁定X轴缩放
+          lockScalingY: true,  // 锁定Y轴缩放
+          hasControls: false,  // 隐藏控制点
+          hasBorders: false    // 隐藏边框
         });
-        console.log('Image positioned and made selectable');
+        console.log('Image positioned and made unselectable without controls');
 
         this.canvas.add(img);
         this.canvas.renderAll();
