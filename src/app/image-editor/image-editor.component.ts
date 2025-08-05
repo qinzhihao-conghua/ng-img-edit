@@ -602,9 +602,10 @@ export class ImageEditorComponent implements AfterViewInit {
   }
 
   addText() {
-    if (!this.textContent.trim()) return;
+    // 使用默认文本
+    const textContent = '添加文本';
     
-    const text = new fabric.Text(this.textContent, {
+    const text = new fabric.IText(textContent, {
       left: 100,
       top: 100,
       fontFamily: 'Arial',
@@ -613,8 +614,46 @@ export class ImageEditorComponent implements AfterViewInit {
       selectable: true
     });
 
+    // 添加双击编辑功能
+    text.on('mousedown', (options: any) => {
+      if (options.e.detail === 2) { // 检查是否为双击
+        this.canvas.setActiveObject(text); // 激活文本对象
+        text.enterEditing(); // 进入编辑模式
+        text.selectAll(); // 选中所有文本
+        this.canvas.requestRenderAll(); // 重新渲染画布
+      }
+    });
+
+    // 添加失去焦点时退出编辑模式的功能
+    text.on('editing:exited', () => {
+      this.canvas.discardActiveObject();
+      this.canvas.requestRenderAll();
+      this.saveState();
+    });
+
     this.canvas.add(text);
+    // 激活新添加的文本对象，让用户看到矩形框
     this.canvas.setActiveObject(text);
+    this.canvas.requestRenderAll();
+    
+    // 监听画布点击事件，当点击画布外区域时完成文本编辑
+    const canvasClickHandler = (options: any) => {
+      // 检查点击的是否是文本对象本身
+      if (options.target !== text) {
+        // 如果点击的不是文本对象，则退出编辑模式
+        if (text.isEditing) {
+          text.exitEditing();
+        }
+        // 移除事件监听器
+        this.canvas.off('mouse:down', canvasClickHandler);
+      }
+    };
+    
+    // 延迟添加事件监听器，避免立即触发
+    setTimeout(() => {
+      this.canvas.on('mouse:down', canvasClickHandler);
+    }, 100);
+    
     this.saveState();
   }
 
@@ -821,16 +860,8 @@ export class ImageEditorComponent implements AfterViewInit {
     this.mosaicStyle = style;
   }
 
-  // 文本添加模式标志
-  isTextMode = false;
-  
   // 设置文本大小
   setTextSize(size: number) {
     this.textSize = size;
-  }
-  
-  // 切换文本模式
-  toggleTextMode() {
-    this.isTextMode = !this.isTextMode;
   }
 }
