@@ -114,6 +114,7 @@ export class ImageEditorComponent implements AfterViewInit {
       console.log('Entering drawing mode');
       this.endCropMode();
       this.endMosaicMode();
+      this.endTextMode();
       
       this.canvas.isDrawingMode = true;
       this.canvas.freeDrawingBrush.width = this.brushSize;
@@ -143,6 +144,7 @@ export class ImageEditorComponent implements AfterViewInit {
     if (this.isCropMode) {
       this.endDrawingMode();
       this.endMosaicMode();
+      this.endTextMode();
       
       this.canvas.isDrawingMode = false;
       console.log('Entering crop mode');
@@ -375,6 +377,7 @@ export class ImageEditorComponent implements AfterViewInit {
     if (this.isMosaicMode) {
       this.endDrawingMode();
       this.endCropMode();
+      this.endTextMode();
       
       this.canvas.isDrawingMode = false;
       // 进入马赛克模式
@@ -466,7 +469,17 @@ export class ImageEditorComponent implements AfterViewInit {
       this.canvas.off('mouse:up', this.stopMosaic.bind(this));
     }
   }
-
+// 结束文本模式
+  private endTextMode() {
+    if(this.showTextControls){
+      this.showTextControls=false;
+      // 移除之前的画布点击事件监听器
+    if (this.handleCanvasTextAddBound) {
+      this.canvas.off('mouse:down', this.handleCanvasTextAddBound);
+      this.handleCanvasTextAddBound = null;
+    }
+    }
+  }
   startMosaic(event: fabric.IEvent) {
     // 检查是否是鼠标左键
     if (event.e instanceof MouseEvent && event.e.button !== 0) return;
@@ -619,6 +632,9 @@ export class ImageEditorComponent implements AfterViewInit {
     
     // 如果是打开文本控制面板，则添加画布点击事件监听器
     if (this.showTextControls) {
+      this.endDrawingMode();
+      this.endCropMode();
+      this.endMosaicMode();
       // 添加画布点击事件监听器来添加文本
       this.handleCanvasTextAddBound = this.handleCanvasTextAdd.bind(this);
       this.canvas.on('mouse:down', this.handleCanvasTextAddBound);
