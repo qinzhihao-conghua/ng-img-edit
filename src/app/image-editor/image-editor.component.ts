@@ -1010,6 +1010,51 @@ export class ImageEditorComponent implements AfterViewInit {
     this.textSize = size;
   }
 
+  // 将编辑后的图片转换为FileList
+  convertToFiles(): FileList | null {
+    // 使用fabric.js的toDataURL方法获取整个画布的内容
+    const dataURL = this.canvas.toDataURL({
+      format: 'png',
+      quality: 1
+    });
+    
+    // 将dataURL转换为Blob
+    const blob = this.dataURLToBlob(dataURL);
+    
+    // 创建一个File对象
+    const file = new File([blob], 'edited-image.png', { type: 'image/png' });
+    
+    // 创建一个FileList对象
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    
+    const fileList = dataTransfer.files;
+    
+    // 显示提示信息
+    alert(`已成功转换为FileList，包含 ${fileList.length} 个文件`);
+    
+    return fileList;
+  }
+  
+  // 辅助方法：将dataURL转换为Blob
+  private dataURLToBlob(dataURL: string): Blob {
+    const parts = dataURL.split(',');
+    let mime = 'image/png'; // 默认MIME类型
+    
+    // 兼容TypeScript 3.5版本，不使用可选链操作符
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    if (mimeMatch && mimeMatch[1]) {
+      mime = mimeMatch[1];
+    }
+    
+    const binary = atob(parts[1]);
+    const array = [];
+    for (let i = 0; i < binary.length; i++) {
+      array.push(binary.charCodeAt(i));
+    }
+    return new Blob([new Uint8Array(array)], { type: mime });
+  }
+
   // 放大图片
   zoomIn() {
     if (!this.imageObject) return;

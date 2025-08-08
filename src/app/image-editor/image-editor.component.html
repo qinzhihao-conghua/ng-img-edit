@@ -36,6 +36,7 @@
         <button (click)="zoomIn()">放大</button>
         <button (click)="zoomOut()">缩小</button>
         <button (click)="exportAsPNG()">导出PNG</button>
+        <button (click)="convertToFiles()">转换为FileList</button>
 
         <div *ngIf="isDrawingMode" class="size-control">
             <label>画笔大小: {{brushSize}}px</label>
